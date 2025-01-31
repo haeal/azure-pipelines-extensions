@@ -8,7 +8,7 @@ param(
     [bool] $requireExitCodeZero
 )
     Write-Host "About to execute: $filename $arguments"
-    #Invoke-Expression "$filename $arguments"
+    return Invoke-Command -ScriptBlock "$filename $arguments"
 }
 
 function Get-AppCmdLocation
