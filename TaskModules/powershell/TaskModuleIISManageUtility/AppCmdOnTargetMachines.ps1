@@ -36,9 +36,9 @@ function Invoke-ToolInternal {
  )
      Write-Host "About to execute: $FileName $Arguments"
      #return Invoke-Command -ScriptBlock "$filename $arguments"
-	 (Invoke-Expression "& '$FileName' --% $Arguments") | Tee-Object -Variable out 
+	 (Invoke-Expression "& '$FileName' --% $Arguments") | Write-Host
      
-     Write-Host "This is the output from the command: $out"
+     #Write-Host "This is the output from the command: $out"
 	 Write-Verbose "Exit code: $LASTEXITCODE"
 	if ($RequireExitCodeZero -and $LASTEXITCODE -ne 0) {
 		Write-Error "Failed to execute the statement $FileName $Arguments\r\n
