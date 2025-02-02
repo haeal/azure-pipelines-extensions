@@ -1,15 +1,16 @@
 Write-Verbose "Entering script AppCmdOnTargetMachines.ps1"
 $AppCmdRegKey = "HKLM:\SOFTWARE\Microsoft\InetStp"
 
-# function Invoke-ToolInternal {
-# param(
-#     [string] $filename,
-#     [string] $arguments,
-#     [bool] $requireExitCodeZero
-# )
-#     Write-Host "About to execute: $filename $arguments"
-#     return Invoke-Command -ScriptBlock "$filename $arguments"
-#}
+function Invoke-ToolInternal {
+ param(
+     [string] $filename,
+     [string] $arguments,
+     [bool] $requireExitCodeZero
+ )
+     Write-Host "About to execute: $filename $arguments"
+     #return Invoke-Command -ScriptBlock "$filename $arguments"
+	 Invoke-Expression "& '$filename' --% $arguments"
+}
 
 function Get-AppCmdLocation
 {
@@ -53,7 +54,7 @@ function Test-WebsiteExist
     $command = "`"$appCmdPath`" $appCmdArgs"
     Write-Verbose "Checking website exists. Running command : $command"
 
-    $website = Invoke-Tool -Filename $appCmdPath -Arguments $appCmdArgs
+    $website = Invoke-ToolInternal -Filename $appCmdPath -Arguments $appCmdArgs
 
     if($null -ne $website -and $website -like "*`"$siteName`"*")
     {
@@ -81,7 +82,7 @@ function Test-BindingExist
 
     Write-Verbose "Checking binding exists for website (`"$siteName`"). Running command : $command"
 
-    $sites = Invoke-Tool -Filename $appCmdPath -Arguments $appCmdArgs
+    $sites = Invoke-ToolInternal -Filename $appCmdPath -Arguments $appCmdArgs
 
     $binding = [string]::Format("{0}/{1}:{2}:{3},", $protocol, $ipAddress, $port, $hostname)
 
@@ -117,7 +118,7 @@ function Test-AppPoolExist
 
     Write-Verbose "Checking application pool exists. Running command : $command"
 
-    $appPool = Invoke-Tool -Filename $appCmdPath -Arguments $appCmdArgs
+    $appPool = Invoke-ToolInternal -Filename $appCmdPath -Arguments $appCmdArgs
 
     $appPoolName = $appPoolName.Replace('`', '``').Replace('"', '`"').Replace('$', '`$')
     if($null -ne $appPool -and $appPool -like "*`"$appPoolName`"*")
@@ -157,7 +158,7 @@ function Enable-SNI
     $command = "`"$appCmdPath`" $appCmdArgs"
 
     Write-Verbose "Enabling SNI by setting SslFlags=1 for binding. Running command : $command"
-    Invoke-Tool -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
+    Invoke-ToolInternal -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
 }
 
 function Add-SslCert
@@ -192,7 +193,7 @@ function Add-SslCert
         $showCertCmd = [string]::Format("http show sslcert hostnameport={0}:{1}", $hostname, $port)
         Write-Verbose "Checking if SslCert binding is already present. Running command : netsh $showCertCmd"
 
-        $result = Invoke-Tool -Filename "netsh" -Arguments $showCertCmd
+        $result = Invoke-ToolInternal -Filename "netsh" -Arguments $showCertCmd
         $isItSameBinding = $result.Get(4).Contains([string]::Format("{0}:{1}", $hostname, $port))
 
         $addCertCmd = [string]::Format("http add sslcert hostnameport={0}:{1} certhash={2} appid={{{3}}} certstorename=MY", $hostname, $port, $certhash, [System.Guid]::NewGuid().toString())
@@ -202,7 +203,7 @@ function Add-SslCert
         $showCertCmd = [string]::Format("http show sslcert ipport={0}:{1}", $ipAddress, $port)
         Write-Verbose "Checking if SslCert binding is already present. Running command : netsh $showCertCmd"
 
-        $result = Invoke-Tool -Filename "netsh" -Arguments $showCertCmd
+        $result = Invoke-ToolInternal -Filename "netsh" -Arguments $showCertCmd
         $isItSameBinding = $result.Get(4).Contains([string]::Format("{0}:{1}", $ipAddress, $port))
         
         $addCertCmd = [string]::Format("http add sslcert ipport={0}:{1} certhash={2} appid={{{3}}} certstorename=MY", $ipAddress, $port, $certhash, [System.Guid]::NewGuid().toString())
@@ -217,7 +218,7 @@ function Add-SslCert
     }
 
     Write-Verbose "Setting SslCert for website."
-    Invoke-Tool -Filename "netsh" -Arguments $addCertCmd -RequireExitCodeZero
+    Invoke-ToolInternal -Filename "netsh" -Arguments $addCertCmd -RequireExitCodeZero
 }
 
 function Add-Website
@@ -232,7 +233,7 @@ function Add-Website
     $command = "`"$appCmdPath`" $appCmdArgs"
 
     Write-Verbose "Creating website. Running command : $command"
-    Invoke-Tool -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
+    Invoke-ToolInternal -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
 }
 
 function Add-AppPool
@@ -246,7 +247,7 @@ function Add-AppPool
     $command = "`"$appCmdPath`" $appCmdArgs"
 
     Write-Verbose "Creating application Pool. Running command : $command"
-    Invoke-Tool -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
+    Invoke-ToolInternal -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
 }
 
 function Invoke-AdditionalCommand
@@ -265,7 +266,7 @@ function Invoke-AdditionalCommand
             $command = "`"$appCmdPath`" $appCmdCommand"
 
             Write-Verbose "Running additional command. $command"
-            Invoke-Tool -Filename $appCmdPath -Arguments $appCmdCommand -RequireExitCodeZero
+            Invoke-ToolInternal -Filename $appCmdPath -Arguments $appCmdCommand -RequireExitCodeZero
         }
     }
 }
@@ -293,7 +294,7 @@ function Add-WebsiteBindings {
             $command = "`"$appCmdPath`" $appCmdArgs"
 
             Write-Verbose "Updating website bindings. Running command : $command"
-            Invoke-Tool -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
+            Invoke-ToolInternal -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
         }
 
         if($binding.protocol -eq "https") {
@@ -357,7 +358,7 @@ function Update-Website
     $command = "`"$appCmdPath`" $appCmdArgs"
 
     Write-Verbose "Updating website properties. Running command : $command"
-    Invoke-Tool -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
+    Invoke-ToolInternal -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
 }
 
 function Update-AppPool
@@ -410,7 +411,7 @@ function Update-AppPool
     $command = "`"$appCmdPath`" $appCmdArgs"
 
     Write-Verbose "Updating application pool properties. Running command : $command"
-    Invoke-Tool -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
+    Invoke-ToolInternal -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
 }
 
 function Add-And-Update-Website
@@ -464,7 +465,7 @@ function Test-ApplicationExist {
     $command = "`"$appCmdPath`" $appCmdArgs"
     Write-Verbose "Checking application exists. Running command : $command"
 
-    $application = Invoke-Tool -Filename $appCmdPath -Arguments $appCmdArgs 
+    $application = Invoke-ToolInternal -Filename $appCmdPath -Arguments $appCmdArgs 
 
     if($null -ne $application -and $application -like "*`"$applicationName`"*")
     {
@@ -489,7 +490,7 @@ function Add-Application
     $command = "`"$appCmdPath`" $appCmdArgs"
 
     Write-Verbose "Creating web application. Running command : $command"
-    Invoke-Tool -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
+    Invoke-ToolInternal -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
 }
 
 function Update-Application 
@@ -545,7 +546,7 @@ function Update-Application
     $command = "`"$appCmdPath`" $appCmdArgs"
 
     Write-Verbose "Updating application properties. Running command : $command"
-    Invoke-Tool -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
+    Invoke-ToolInternal -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
 }
 
 function Add-And-Update-Application 
@@ -581,7 +582,7 @@ function Test-VirtualDirectoryExist
     $command = "`"$appCmdPath`" $appCmdArgs"
     Write-Verbose "Checking virtual directory exists. Running command : $command"
 
-    $virtualDirectory = Invoke-Tool -Filename $appCmdPath -Arguments $appCmdArgs
+    $virtualDirectory = Invoke-ToolInternal -Filename $appCmdPath -Arguments $appCmdArgs
 
     if($null -ne $virtualDirectory -and $virtualDirectory -like "*`"$virtualDirectoryName`"*")
     {
@@ -607,7 +608,7 @@ function Add-VirtualDirectory
     $command = "`"$appCmdPath`" $appCmdArgs"
 
     Write-Verbose "Creating virtual directory. Running command : $command"
-    Invoke-Tool -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
+    Invoke-ToolInternal -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
 }
 
 function Update-VirtualDirectory 
@@ -657,7 +658,7 @@ function Update-VirtualDirectory
     $command = "`"$appCmdPath`" $appCmdArgs"
 
     Write-Verbose "Updating virtual directory properties. Running command : $command"
-    Invoke-Tool -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
+    Invoke-ToolInternal -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
 }
 
 function Add-And-Update-VirtualDirectory 
@@ -706,7 +707,7 @@ function Start-Stop-Website {
     $command = "`"$appCmdPath`" $appCmdArgs"
 
     Write-Verbose "Performing action '$action' on website '$sitename'. Running command $command"
-    Invoke-Tool -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
+    Invoke-ToolInternal -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
 }
 
 function Start-Stop-Recycle-ApplicationPool {
@@ -720,7 +721,7 @@ function Start-Stop-Recycle-ApplicationPool {
     $command = "`"$appCmdPath`" $appCmdArgs"
 
     Write-Verbose "Performing action '$action' on application pool '$appPoolName'. Running command $command"
-    Invoke-Tool -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
+    Invoke-ToolInternal -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
 }
 
 function Set-WebsiteAuthentication {
@@ -738,19 +739,19 @@ function Set-WebsiteAuthentication {
     $command = "`"$appCmdPath`" $appCmdArgs"
     Write-Verbose "Setting anonymous authentication for website '$websiteName' to $anonymousAuthentication."
     Write-Verbose "Running command $command"
-    Invoke-Tool -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
+    Invoke-ToolInternal -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
 
     $appCmdArgs = [string]::Format('set config "{0}" /section:basicAuthentication /enabled:{1} /commit:apphost', $websiteName, $basicAuthentication)
     $command = "`"$appCmdPath`" $appCmdArgs"
     Write-Verbose "Setting basic authentication for website '$websiteName' to $basicAuthentication."
     Write-Verbose "Running command $command"
-    Invoke-Tool -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
+    Invoke-ToolInternal -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
 
     $appCmdArgs = [string]::Format('set config "{0}" /section:windowsAuthentication /enabled:{1} /commit:apphost', $websiteName, $windowsAuthentication)
     $command = "`"$appCmdPath`" $appCmdArgs"
     Write-Verbose "Setting windows authentication for website '$websiteName' to $windowsAuthentication."
     Write-Verbose "Running command $command"
-    Invoke-Tool -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
+    Invoke-ToolInternal -Filename $appCmdPath -Arguments $appCmdArgs -RequireExitCodeZero
 }
 
 function Invoke-Main
