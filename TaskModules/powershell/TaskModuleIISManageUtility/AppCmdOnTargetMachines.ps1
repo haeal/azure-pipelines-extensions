@@ -40,8 +40,7 @@ function Invoke-ToolInternal {
 	 
 	 Write-Verbose "Exit code: $LASTEXITCODE"
 	if ($RequireExitCodeZero -and $LASTEXITCODE -ne 0) {
-		Write-Error "Failed to execute the statement $FileName $Arguments"
-        Write-Error "This is the output from the command: $out"
+		Write-Error "Failed to execute the statement $FileName $Arguments\r\nThis is the output from the command: $out"
 	}
 }
 
