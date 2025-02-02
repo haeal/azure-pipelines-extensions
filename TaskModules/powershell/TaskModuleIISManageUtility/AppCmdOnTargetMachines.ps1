@@ -3,13 +3,13 @@ $AppCmdRegKey = "HKLM:\SOFTWARE\Microsoft\InetStp"
 
 function Invoke-ToolInternal {
  param(
-     [string] $filename,
-     [string] $arguments,
-     [bool] $requireExitCodeZero
+     [string] $FileName,
+     [string] $Arguments,
+     [switch]$RequireExitCodeZero
  )
-     Write-Host "About to execute: $filename $arguments"
+     Write-Host "About to execute: $FileName $Arguments"
      #return Invoke-Command -ScriptBlock "$filename $arguments"
-	 Invoke-Expression "& '$filename' --% $arguments"
+	 Invoke-Expression "& '$FileName' --% $Arguments"
 }
 
 function Get-AppCmdLocation
