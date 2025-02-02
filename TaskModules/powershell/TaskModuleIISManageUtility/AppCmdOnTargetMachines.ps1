@@ -1,4 +1,4 @@
-Write-Host "Entering script AppCmdOnTargetMachines.ps1 Version 234"
+Write-Host "Entering script AppCmdOnTargetMachines.ps1 Version 235"
 $AppCmdRegKey = "HKLM:\SOFTWARE\Microsoft\InetStp"
 
 function Get-Netsh-Command {
@@ -37,10 +37,10 @@ function Invoke-ToolInternal {
      Write-Host "About to execute: $FileName $Arguments"
      #return Invoke-Command -ScriptBlock "$filename $arguments"
 	 Invoke-Expression "& '$FileName' --% $Arguments"  | Tee-Object -Variable out 
-	 
+     Write-Host "This is the output from the command: $out"
 	 Write-Verbose "Exit code: $LASTEXITCODE"
 	if ($RequireExitCodeZero -and $LASTEXITCODE -ne 0) {
-		Write-Error "Failed to execute the statement $FileName $Arguments\r\nThis is the output from the command: $out"
+		Write-Error "Failed to execute the statement $FileName $Arguments\r\n
 	}
 }
 
