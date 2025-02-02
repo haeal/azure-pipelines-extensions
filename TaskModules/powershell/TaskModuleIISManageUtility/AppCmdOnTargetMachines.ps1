@@ -220,7 +220,7 @@ function Add-SslCert
     }
 
     Write-Verbose "Setting SslCert for website: $certCmd"
-    $result = Invoke-VstsTool -Filename "netsh" -Arguments $certCmd -RequireExitCodeZero
+    $result = Invoke-ToolInternal -Filename "netsh" -Arguments $certCmd -RequireExitCodeZero
     Write-Verbose "$certCmd executed with result: $result"
 }
 
