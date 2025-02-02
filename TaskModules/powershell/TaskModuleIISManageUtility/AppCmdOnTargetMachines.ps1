@@ -1,17 +1,6 @@
 Write-Verbose "Entering script AppCmdOnTargetMachines.ps1"
 $AppCmdRegKey = "HKLM:\SOFTWARE\Microsoft\InetStp"
 
-function Invoke-ToolInternal {
- param(
-     [string] $FileName,
-     [string] $Arguments,
-     [switch]$RequireExitCodeZero
- )
-     Write-Host "About to execute: $FileName $Arguments"
-     #return Invoke-Command -ScriptBlock "$filename $arguments"
-	 Invoke-Expression "& '$FileName' --% $Arguments"
-}
-
 function Get-Netsh-Command {
     param (
         [string]$port,
@@ -33,6 +22,22 @@ function Get-Netsh-Command {
             return [string]::Format("http update sslcert {4}={0}:{1} certhash={2} appid='{3}' certstorename=MY", $hostOrIp, $port, $certhash, $applicationId, $keyName) #TODO: this won't work with older versions of netsh, add something here to check the netsh version.
         } 
         return [string]::Empty #Case 3: the certificate bound to this host/ip and port has the same thumbprint as the new certificate.  Do nothing.
+}
+
+function Invoke-ToolInternal {
+ param(
+     [string] $FileName,
+     [string] $Arguments,
+     [switch]$RequireExitCodeZero
+ )
+     Write-Host "About to execute: $FileName $Arguments"
+     #return Invoke-Command -ScriptBlock "$filename $arguments"
+	 Invoke-Expression "& '$FileName' --% $Arguments"
+	 
+	 Write-Verbose "Exit code: $LASTEXITCODE"
+	if ($RequireExitCodeZero -and $LASTEXITCODE -ne 0) {
+		Write-Error "Failed to execute the statement $FileName $Arguments"
+	}
 }
 
 function Get-AppCmdLocation
@@ -206,13 +211,13 @@ function Add-SslCert
         $ipAddress = "0.0.0.0"
     }
     $certCmd = [string]::Empty
-    $port  = "ipport"
+    $hostorport  = "ipport"
     #SNI is supported IIS 8 and above. To enable SNI hostnameport option should be used
     if($sni -eq "true" -and $iisVersion -ge 8 -and -not [string]::IsNullOrWhiteSpace($hostname))
     {
-        $port = "hostnameport"
+        $hostorport = "hostnameport"
     }
-    $certCmd = Get-Netsh-Command -port $port -newCertHash $certhash -keyName $port -hostOrIp $hostname
+    $certCmd = Get-Netsh-Command -port $port -newCertHash $certhash -keyName $hostorport -hostOrIp $hostname
     if(-not $certCmd)
     {
         Write-Verbose "SSL cert binding with the specified certificate is already present. Returning"
