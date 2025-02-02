@@ -1,6 +1,17 @@
 Write-Verbose "Entering script AppCmdOnTargetMachines.ps1"
 $AppCmdRegKey = "HKLM:\SOFTWARE\Microsoft\InetStp"
 
+function Invoke-ToolInternal {
+ param(
+     [string] $FileName,
+     [string] $Arguments,
+     [switch]$RequireExitCodeZero
+ )
+     Write-Host "About to execute: $FileName $Arguments"
+     #return Invoke-Command -ScriptBlock "$filename $arguments"
+	 Invoke-Expression "& '$FileName' --% $Arguments"
+}
+
 function Get-Netsh-Command {
     param (
         [string]$port,
@@ -11,7 +22,7 @@ function Get-Netsh-Command {
         $showCertCmd = [string]::Format("http show sslcert {2}={0}:{1}", $hostname, $port,$keyName)
         Write-Verbose "Checking if SslCert binding is already present. Running command : netsh $showCertCmd"
 
-        $result = Invoke-VstsTool -Filename "netsh" -Arguments $showCertCmd
+        $result = Invoke-ToolInternal -Filename "netsh" -Arguments $showCertCmd
         $certificateHash = $result | Where { $_.Contains("Certificate Hash") } | Select -First 1
         $hostnamePort = $result | Where { $_.Contains("Hostname:port") } | Select -First 1
         $applicationId = $result | Where { $_.Contains("Application ID") } | Select -First 1
@@ -22,17 +33,6 @@ function Get-Netsh-Command {
             return [string]::Format("http update sslcert {4}={0}:{1} certhash={2} appid='{3}' certstorename=MY", $hostOrIp, $port, $certhash, $applicationId, $keyName) #TODO: this won't work with older versions of netsh, add something here to check the netsh version.
         } 
         return [string]::Empty #Case 3: the certificate bound to this host/ip and port has the same thumbprint as the new certificate.  Do nothing.
-}
-
-function Invoke-ToolInternal {
- param(
-     [string] $FileName,
-     [string] $Arguments,
-     [switch]$RequireExitCodeZero
- )
-     Write-Host "About to execute: $FileName $Arguments"
-     #return Invoke-Command -ScriptBlock "$filename $arguments"
-	 Invoke-Expression "& '$FileName' --% $Arguments"
 }
 
 function Get-AppCmdLocation
