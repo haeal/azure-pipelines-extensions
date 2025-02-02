@@ -1,4 +1,4 @@
-Write-Verbose "Entering script AppCmdOnTargetMachines.ps1"
+Write-Host "Entering script AppCmdOnTargetMachines.ps1 Version 233"
 $AppCmdRegKey = "HKLM:\SOFTWARE\Microsoft\InetStp"
 
 function Get-Netsh-Command {
