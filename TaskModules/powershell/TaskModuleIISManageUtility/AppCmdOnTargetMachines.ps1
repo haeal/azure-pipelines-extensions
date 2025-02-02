@@ -26,18 +26,22 @@ function Get-Netsh-Command {
 
 function Invoke-ToolInternal {
  param(
-     [string] $FileName,
-     [string] $Arguments,
-     [switch]$RequireExitCodeZero
+    [ValidatePattern('^[^\r\n]*$')]
+    [Parameter(Mandatory = $true)]
+    [string]$FileName,
+    [ValidatePattern('^[^\r\n]*$')]
+    [Parameter()]
+    [string]$Arguments,
+    [switch]$RequireExitCodeZero
  )
      Write-Host "About to execute: $FileName $Arguments"
      #return Invoke-Command -ScriptBlock "$filename $arguments"
-	 $output = Invoke-Expression "& '$FileName' --% $Arguments"
+	 Invoke-Expression "& '$FileName' --% $Arguments"  | Tee-Object -Variable out 
 	 
 	 Write-Verbose "Exit code: $LASTEXITCODE"
 	if ($RequireExitCodeZero -and $LASTEXITCODE -ne 0) {
 		Write-Error "Failed to execute the statement $FileName $Arguments"
-        Write-Error "This is the output from the command: $output"
+        Write-Error "This is the output from the command: $out"
 	}
 }
 
