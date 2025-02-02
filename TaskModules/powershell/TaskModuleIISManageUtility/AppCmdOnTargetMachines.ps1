@@ -1,4 +1,4 @@
-Write-Host "Entering script AppCmdOnTargetMachines.ps1 Version 237"
+Write-Host "Entering script AppCmdOnTargetMachines.ps1 Version 238"
 $AppCmdRegKey = "HKLM:\SOFTWARE\Microsoft\InetStp"
 
 function Get-Netsh-Command {
@@ -16,10 +16,10 @@ function Get-Netsh-Command {
         $hostnamePort = $result | Where { $_.Contains("Hostname:port") } | Select -First 1
         $applicationId = $result | Where { $_.Contains("Application ID") } | Select -First 1
         if ([string]::IsNullOrEmpty($hostnamePort)) { #case 1: Existing binding not found.  Run the netsh ADD command to bind the certificate.
-            return [string]::Format("http add sslcert {4}={0}:{1} certhash={2} appid='{{{3}}}' certstorename=MY", $hostOrIp, $port, $certhash, [System.Guid]::NewGuid().toString(), $keyName)
+            return [string]::Format("http add sslcert {4}={0}:{1} appid='{{{3}}}' certhash={2} certstorename=MY", $hostOrIp, $port, $certhash, [System.Guid]::NewGuid().toString(), $keyName)
         } elseif (-not $certificateHash.ToLower().Contains($newCertHash.ToLower())) { # case 2: existing binding found, but thumbprint of incoming cert does not match. run netsh UPDATE command. note that we must use the existing application id in this case.
             $applicationId = $applicationId.Split(":")[1].Trim();
-            return [string]::Format("http update sslcert {4}={0}:{1} certhash={2} appid='{3}' certstorename=MY", $hostOrIp, $port, $certhash, $applicationId, $keyName) #TODO: this won't work with older versions of netsh, add something here to check the netsh version.
+            return [string]::Format("http update sslcert {4}={0}:{1} appid='{3}' certhash={2} certstorename=MY", $hostOrIp, $port, $certhash, $applicationId, $keyName) #TODO: this won't work with older versions of netsh, add something here to check the netsh version.
         } 
         return [string]::Empty #Case 3: the certificate bound to this host/ip and port has the same thumbprint as the new certificate.  Do nothing.
 }
